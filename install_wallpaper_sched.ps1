@@ -34,8 +34,9 @@ $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddSeconds(10) -Repetit
 
 # Register only if not already existing
 if (-not (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue)) {
-    Register-ScheduledTask -Action $action -Trigger $trigger -TaskName $taskName -Description "Reapply Danny DeVito wallpaper every 60 seconds" -User $env:USERNAME -RunLevel Highest -Force
+    Register-ScheduledTask -Action $action -Trigger $trigger -TaskName $taskName -Description "Reapply Danny DeVito wallpaper every 60 seconds" -User $env:USERNAME -RunLevel Limited -Force
 }
 
 Write-Host "Wallpaper applied and scheduled task created. PowerShell will remain open for debugging."
+
 
