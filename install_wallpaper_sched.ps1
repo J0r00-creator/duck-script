@@ -1,7 +1,7 @@
 # === install_wallpaper_sched.ps1 ===
 
-# --- Set wallpaper image URL (GitHub raw link) ---
-$imageUrl = "https://raw.githubusercontent.com/J0r00-creator/duck-script/main/danny_devito_wallpaper.jpg"
+# --- Wallpaper URL ---
+$imageUrl = "https://raw.githubusercontent.com/J0r00-creator/duck-script/main/danny.jpg"
 
 # --- Destination folder ---
 $destDir = Join-Path $env:APPDATA "DemoWallpaper"
@@ -9,10 +9,10 @@ if (-not (Test-Path $destDir)) {
     New-Item -ItemType Directory -Path $destDir -Force | Out-Null
 }
 
-# --- Download the wallpaper ---
+# --- Download wallpaper ---
 $destImage = Join-Path $destDir "wallpaper.jpg"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-Invoke-WebRequest -Uri $imageUrl -OutFile $destImage -UseBasicParsing
+Invoke-WebRequest -Uri $imageUrl -OutFile "$destImage" -UseBasicParsing
 
 # --- Apply wallpaper immediately ---
 Add-Type -TypeDefinition @"
@@ -25,15 +25,17 @@ public static class Wallpaper {
 }
 "@ -PassThru
 
-[Wallpaper]::SystemParametersInfo(20, 0, $destImage, 0x01 -bor 0x02)
+[Wallpaper]::SystemParametersInfo(20, 0, "$destImage", 0x01 -bor 0x02)
 
-# --- Create scheduled task to reapply every 60 seconds ---
+# --- Create scheduled task to reapply wallpaper every 60 seconds ---
 $taskName = "DannyDeVitoWallpaper"
 $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$destImage`""
 $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddSeconds(10) -RepetitionInterval (New-TimeSpan -Seconds 60)
 
+# Register only if not already existing
 if (-not (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue)) {
     Register-ScheduledTask -Action $action -Trigger $trigger -TaskName $taskName -Description "Reapply Danny DeVito wallpaper every 60 seconds" -User $env:USERNAME -RunLevel Highest -Force
 }
 
-Write-Host "Wallpaper installed and scheduled task created."
+Write-Host "Wallpaper applied and scheduled task created. PowerShell will remain open for debugging."
+
