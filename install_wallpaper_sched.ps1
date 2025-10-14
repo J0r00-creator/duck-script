@@ -1,5 +1,13 @@
 # install_wallpaper_sched.ps1
 # Downloads an image, sets it as wallpaper, creates setwallpaper helper, and schedules reapply every 60s.
+if (-not ([bool]([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))) {
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = "powershell.exe"
+    $psi.Arguments = "-NoProfile -ExecutionPolicy Bypass -File `"" + $PSCommandPath + "`""
+    $psi.Verb = "runas"                # triggers UAC prompt
+    try { [Diagnostics.Process]::Start($psi) | Out-Null } catch { Write-Error "Elevation cancelled."; exit 1 }
+    exit
+}
 $imageUrl = "https://i.pinimg.com/236x/ea/d2/cb/ead2cb32fa912c33e2a7f0ecd4b87ff3.jpg"
 $destDir = Join-Path $env:APPDATA "DemoWallpaper"
 New-Item -Path $destDir -ItemType Directory -Force | Out-Null
@@ -48,3 +56,4 @@ schtasks.exe /Delete /TN $taskName /F > $null 2>&1
 schtasks.exe /Create /SC MINUTE /MO 1 /TN $taskName /TR $tr /F
 
 Write-Host "Installed wallpaper and scheduled task '$taskName' to run every 1 minute."
+
