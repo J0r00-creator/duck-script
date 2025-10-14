@@ -29,7 +29,7 @@ public static class Wallpaper {
 
 # --- Create scheduled task to reapply wallpaper every 60 seconds ---
 $taskName = "DannyDeVitoWallpaper"
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$destImage`""
+$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -WindowStyle -ExecutionPolicy Bypass -File `"$destImage`""
 $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddSeconds(10) -RepetitionInterval (New-TimeSpan -Seconds 60)
 
 # Register only if not already existing
@@ -38,5 +38,6 @@ if (-not (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue)) 
 }
 
 Write-Host "Wallpaper applied and scheduled task created. PowerShell will remain open for debugging."
+
 
 
