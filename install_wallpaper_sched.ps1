@@ -1,36 +1,38 @@
-# install_wallpaper_sched.ps1
-# Downloads an image, sets it as wallpaper, creates setwallpaper helper, and schedules reapply every 60s.
-# URL of your wallpaper image (raw GitHub link)
-$imageUrl = "https://raw.githubusercontent.com/J0r00-creator/duck-script/main/danny.jpg"
+# === install_wallpaper_sched.ps1 ===
 
-# Destination folder for the wallpaper
+# --- Set wallpaper image URL (GitHub raw link) ---
+$imageUrl = "https://raw.githubusercontent.com/J0r00-creator/duck-script/main/danny_devito_wallpaper.jpg"
+
+# --- Destination folder ---
 $destDir = Join-Path $env:APPDATA "DemoWallpaper"
-if(-not (Test-Path $destDir)){ New-Item -Path $destDir -ItemType Directory -Force | Out-Null }
+if (-not (Test-Path $destDir)) {
+    New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+}
 
-# Destination image path
+# --- Download the wallpaper ---
 $destImage = Join-Path $destDir "wallpaper.jpg"
-
-# Download the image
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 Invoke-WebRequest -Uri $imageUrl -OutFile $destImage -UseBasicParsing
 
-# Function to set wallpaper
-Add-Type -MemberDefinition @"
+# --- Apply wallpaper immediately ---
+Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
-public class N {
-    [DllImport("user32.dll",SetLastError=true)]
-    public static extern bool SystemParametersInfo(int uAction,int uParam,string lpvParam,int fuWinIni);
+
+public static class Wallpaper {
+    [DllImport("user32.dll", SetLastError=true)]
+    public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
 }
-"@ -Name N -Namespace Win32
+"@ -PassThru
 
-# Apply wallpaper immediately
-[Win32.N]::SystemParametersInfo(20,0,$destImage,0x01 -bor 0x02)
+[Wallpaper]::SystemParametersInfo(20, 0, $destImage, 0x01 -bor 0x02)
 
-# Optional: Create scheduled task to reapply every 60 seconds
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$destImage`""
-$trigger = New-ScheduledTaskTrigger -RepetitionInterval (New-TimeSpan -Seconds 60) -RepeatIndefinitely -At (Get-Date)
+# --- Create scheduled task to reapply every 60 seconds ---
 $taskName = "DannyDeVitoWallpaper"
-if(-not (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue)){
+$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$destImage`""
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddSeconds(10) -RepetitionInterval (New-TimeSpan -Seconds 60)
+
+if (-not (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue)) {
     Register-ScheduledTask -Action $action -Trigger $trigger -TaskName $taskName -Description "Reapply Danny DeVito wallpaper every 60 seconds" -User $env:USERNAME -RunLevel Highest -Force
 }
 
