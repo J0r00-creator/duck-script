@@ -27,7 +27,7 @@ public static class Wallpaper {
 # --- Create scheduled task to reapply wallpaper every 60 seconds ---
 $taskName = "DannyDeVitoWallpaper"
 
-# Command that re-applies wallpaper each run
+# PowerShell command to reapply wallpaper each time the task runs
 $psCommand = "Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
@@ -37,15 +37,15 @@ public static class Wallpaper {
 }
 '@; [Wallpaper]::SystemParametersInfo(20,0,'$destImage',0x01 -bor 0x02)"
 
-# Hidden PowerShell action
+# Task action
 $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command `"$psCommand`""
 
-# Trigger every 60s for 1 day
+# Task trigger: every 60 seconds for 12 hours (valid duration)
 $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddSeconds(10) `
     -RepetitionInterval (New-TimeSpan -Seconds 60) `
-    -RepetitionDuration (New-TimeSpan -Days 1)
+    -RepetitionDuration (New-TimeSpan -Hours 12)
 
-# Register only if not existing
+# Register task if not already present
 if (-not (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue)) {
     Register-ScheduledTask -Action $action -Trigger $trigger `
         -TaskName $taskName `
@@ -53,6 +53,6 @@ if (-not (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue)) 
         -User $env:USERNAME -RunLevel Limited -Force
 }
 
-Write-Host "Wallpaper applied and scheduled task created."
+Write-Host "Wallpaper applied and 12-hour repeating scheduled task created."
 
 
