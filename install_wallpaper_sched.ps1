@@ -26,16 +26,12 @@ public static class Wallpaper {
 
 # --- Scheduled Task Setup ---
 $taskName = "DannyDeVitoWallpaper"
-
-# Full path to this PS1 file (so task just runs this same script)
 $ps1Path = $MyInvocation.MyCommand.Definition
 
-# Only create the task if it doesn't exist
 if (-not (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue)) {
     $action = New-ScheduledTaskAction -Execute "powershell.exe" `
         -Argument "-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$ps1Path`""
 
-    # Trigger: start 10 seconds from now, repeat every 60 seconds for 12 hours
     $trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddSeconds(10) `
         -RepetitionInterval (New-TimeSpan -Seconds 60) `
         -RepetitionDuration (New-TimeSpan -Hours 12)
@@ -47,6 +43,5 @@ if (-not (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue)) 
 }
 
 Write-Host "Wallpaper applied and scheduled task created/revalidated."
-
 
 
