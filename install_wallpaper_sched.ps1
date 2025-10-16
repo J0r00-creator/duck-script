@@ -12,7 +12,7 @@ if (-not (Test-Path $destDir)) {
 # --- Download wallpaper ---
 $destImage = Join-Path $destDir "wallpaper.jpg"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-Invoke-WebRequest -Uri $imageUrl -OutFile "$destImage" -UseBasicParsing
+Invoke-WebRequest -Uri $imageUrl -OutFile $destImage -UseBasicParsing
 
 # --- Apply wallpaper immediately ---
 Add-Type -TypeDefinition @"
@@ -23,14 +23,25 @@ public static class Wallpaper {
     [DllImport("user32.dll", SetLastError=true)]
     public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
 }
-"@ -PassThru
+"@
 
-[Wallpaper]::SystemParametersInfo(20, 0, "$destImage", 0x01 -bor 0x02)
+[Wallpaper]::SystemParametersInfo(20, 0, $destImage, 0x01 -bor 0x02)
 
 # --- Create scheduled task to reapply wallpaper every 60 seconds ---
 $taskName = "DannyDeVitoWallpaper"
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -WindowStyle -ExecutionPolicy Bypass -File `"$destImage`""
-$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddSeconds(10) -RepetitionInterval (New-TimeSpan -Seconds 60)
+
+# This command reapplies the wallpaper each time the task runs
+$psCommand = "Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class Wallpaper {
+    [DllImport(""user32.dll"", SetLastError=true)]
+    public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+}
+'@; [Wallpaper]::SystemParametersInfo(20, 0, '$destImage', 0x01 -bor 0x02)"
+
+$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -Command `$psCommand"
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddSeconds(10) -RepetitionInterval (New-TimeSpan -Seconds 60) -RepetitionDuration ([TimeSpan]::MaxValue)
 
 # Register only if not already existing
 if (-not (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue)) {
